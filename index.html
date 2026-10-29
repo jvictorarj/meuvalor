@@ -178,6 +178,8 @@ details > .body { padding-bottom: 12px; display: grid; gap: 12px; }
 .chk input { width: 20px; height: 20px; accent-color: var(--verde); flex: none; }
 .chk .hint { font-weight: 400; }
 
+.assist { border: 1.5px dashed var(--verde2); border-radius: 12px; padding: 10px 12px; background: #fff; }
+.assist > .body { gap: 10px; }
 .stripi { display: flex; flex-wrap: wrap; gap: 6px 22px; background: var(--claro); border-radius: 12px; padding: 11px 14px; font-size: .85rem; }
 .stripi b { font-variant-numeric: tabular-nums; font-size: 1rem; color: var(--verde); }
 
@@ -572,6 +574,16 @@ function calcular(s) {
     custoDireto, precoLote, minLote, sugUn, minUn, custoUn, destino,
     p, lucroUn, lucroLote, margemReal, status, c, cmp, retirada, ganhoHora, eq };
 }
+
+// Custo do carro por km: depreciação + seguro/IPVA/financiamento + manutenção, divididos pelos km do mês
+function custoCarro(s) {
+  const n = k => num(s[k]);
+  const meses = n('carroAnos') * 12;
+  const deprec = meses > 0 ? n('carroValor') / meses : 0;
+  const mensal = deprec + n('carroFixo') + n('carroManut');
+  const km = n('carroKm');
+  return { deprec, mensal, km, porKm: km > 0 ? mensal / km : 0 };
+}
 /*CALC_END*/
 
 /* ---------- Estado ---------- */
@@ -580,7 +592,8 @@ const NEGOCIO_PADRAO = {
   modo: 'principal', retirada: '', horasExtra: '', ganhoHora: '',
   energia: '', aluguel: '', celular: '', internet: '', transporte: '', outrasContas: '', equipe: '',
   valorEquip: '', vidaUtil: '', marketing: '', contab: '', software: '', outrosFixos: '',
-  hDia: '8', dSem: '5', sMes: '4', aprov: '70', imposto: '6', cartao: '0', margem: '30'
+  hDia: '8', dSem: '5', sMes: '4', aprov: '70', imposto: '6', cartao: '0', margem: '30',
+  carroValor: '', carroAnos: '', carroFixo: '', carroManut: '', carroKm: ''
 };
 function novoItem() { return { n: '', q: '1', u: 'un', c: '', p: '' }; }
 function produtoVazio() {
@@ -688,7 +701,7 @@ function montarForm() {
       campo('aprov', 'Aproveitamento do tempo', { suf: '%', hint: 'Parte do expediente em que você de fato atende ou produz. O resto vai em orçamento, espera, limpeza.' }) + '</div>' +
       '<div class="stripi"><span>Horas cobráveis por mês <b data-out="horasCob"></b></span><span>Custo da sua hora <b data-out="custoHora"></b></span></div>', 'principal') +
     grupo('Seu tempo no extra', 'sumHorasExtra',
-      '<div class="grid">' + campo('horasExtra', 'Horas por mês dedicadas ao extra', { suf: 'h', ph: '20', hint: 'Some atendimento, preparo e deslocamento. Não sabe? Deixe em branco.' }) +
+      '<div class="grid">' + campo('horasExtra', 'Total de horas por mês dedicadas ao extra', { suf: 'h', ph: '20', hint: 'Soma de todos os trabalhos do mês, não a duração de um só. Ex.: 20 h se faz 10 trabalhos de 2 h. Não sabe? Deixe em branco.' }) +
       campo('ganhoHora', 'Quanto quer ganhar por hora', { pre: 'R$', hint: 'Opcional. Deixe em branco se o extra serve só para cobrir custos.' }) + '</div>' +
       '<div class="stripi"><span>Custo da sua hora <b data-out="custoHora"></b></span></div>', 'extra') +
     grupo('Percentuais sobre o preço de venda', 'sumPct',
@@ -752,8 +765,19 @@ function blocoHTML(k) {
       campo('dist', 'Distância', { suf: 'km', hint: 'Do trajeto deste trabalho.' }) +
       campo('consumo', 'Consumo médio do carro', { suf: 'km/l', hint: 'Quantos km o carro faz com 1 litro.' }) +
       campo('litro', 'Preço do litro', { pre: 'R$', hint: 'Do combustível que você usa.' }) +
-      campo('desgasteKm', 'Desgaste do carro por km', { pre: 'R$', hint: 'Pneus, óleo, manutenção. Opcional.' }) +
+      campo('desgasteKm', 'Desgaste do carro por km', { pre: 'R$', hint: 'Pneus, óleo, manutenção e depreciação. Não sabe? Use o cálculo logo abaixo.' }) +
       campo('pedagio', 'Pedágio e estacionamento', { pre: 'R$', hint: 'Opcional.' }) + '</div>' +
+      '<details class="assist"><summary><span class="t"><i class="chev"></i>Não sabe o desgaste por km? Calcule aqui</span></summary><div class="body">' +
+      '<p class="hint">Responda com valores aproximados. Usamos os km de todos os trabalhos com o carro, para dividir o custo dele de forma justa.</p>' +
+      '<div class="grid">' +
+      campo('carroValor', 'Valor do carro hoje', { pre: 'R$', hint: 'Quanto ele vale, não quanto pagou. Se ainda está financiando, deixe em branco e some a parcela ao lado.' }) +
+      campo('carroAnos', 'Por quantos anos ainda vai usar', { suf: 'anos', hint: 'Antes de trocar de carro.' }) +
+      campo('carroFixo', 'Seguro, IPVA e parcela, por mês', { pre: 'R$', hint: 'Some tudo. IPVA e licenciamento: divida por 12.' }) +
+      campo('carroManut', 'Manutenção, pneus e óleo, por mês', { pre: 'R$', hint: 'Uma média do que você gasta.' }) +
+      campo('carroKm', 'Km rodados por mês', { suf: 'km', hint: 'Total com o carro, incluindo outros trabalhos como o Uber.' }) + '</div>' +
+      '<div class="stripi"><span>Custo do carro por mês <b data-out="carroMensal"></b></span><span>Custo por km <b data-out="carroPorKm"></b></span></div>' +
+      '<button class="btn sm" type="button" data-use-km>Usar este valor no desgaste por km</button>' +
+      '</div></details>' +
       '<label class="chk" for="f-idaVolta"><input type="checkbox" id="f-idaVolta" data-ck="idaVolta"><span>Ida e volta <span class="hint">(conta a distância duas vezes)</span></span></label>' +
       '<div class="stripi"><span>Combustível <b data-out="dFuel"></b></span><span>Desgaste <b data-out="dWear"></b></span><span>Litros gastos <b data-out="dLit"></b></span></div>';
   } else if (k === 'embalagem') {
@@ -791,11 +815,46 @@ function montarMateriais() {
       '<div class="field"><label for="m' + i + '-p">Perda estimada</label><div class="inp"><input id="m' + i + '-p" data-m="' + i + '" data-f="p" type="text" inputmode="decimal" placeholder="0"><span class="ad suf">%</span></div></div>' +
       '<div class="field"><span class="lbl">Total com perda</span><span class="mat-total" id="m' + i + '-t">R$ 0,00</span></div>' +
       '</div></div>').join('');
-  S.materiais.forEach((m, i) => ['n', 'q', 'u', 'c', 'p'].forEach(f => { document.getElementById('m' + i + '-' + f).value = m[f] || ''; }));
+  S.materiais.forEach((m, i) => ['n', 'q', 'u', 'c', 'p'].forEach(f => { const el = document.getElementById('m' + i + '-' + f); el.value = el.getAttribute('inputmode') === 'decimal' ? exibir(m[f]) : (m[f] || ''); }));
 }
 function preencherValores() {
-  document.querySelectorAll('[data-k]').forEach(el => { const v = S[el.dataset.k]; el.value = v === undefined ? '' : v; });
+  document.querySelectorAll('[data-k]').forEach(el => { const v = S[el.dataset.k]; el.value = el.getAttribute('inputmode') === 'decimal' ? exibir(v) : (v === undefined ? '' : v); });
   document.querySelectorAll('[data-ck]').forEach(el => { el.checked = !!S[el.dataset.ck]; });
+}
+
+/* ---------- Separador de milhar nos campos numéricos ---------- */
+function soDigitosVirgula(s) { return s.replace(/[^\d,]/g, ''); }
+function milhar(txt) {                      // "1234,5" -> "1.234,5"
+  let v = soDigitosVirgula(txt);
+  const i = v.indexOf(',');
+  let inteiro = i === -1 ? v : v.slice(0, i);
+  const dec = i === -1 ? null : v.slice(i + 1).replace(/,/g, '');
+  inteiro = inteiro.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return dec === null ? inteiro : inteiro + ',' + dec;
+}
+function exibir(v) {                        // valor guardado -> texto do campo
+  v = String(v == null ? '' : v).trim();
+  if (v === '') return '';
+  if (v.indexOf(',') === -1 && v.indexOf('.') !== -1 && !/^\d{1,3}(\.\d{3})+$/.test(v)) v = v.replace('.', ',');
+  return milhar(v.replace(/\./g, ''));
+}
+function formatarCampo(el, ev) {
+  let v = el.value, pos = el.selectionStart;
+  if (ev && ev.inputType === 'insertText' && ev.data === '.') {      // ponto digitado vira vírgula decimal
+    v = v.slice(0, pos - 1) + ',' + v.slice(pos);
+  } else if (ev && ev.inputType === 'insertFromPaste') {
+    const t = v.trim();
+    if (t.indexOf(',') === -1 && t.indexOf('.') !== -1 && !/^\d{1,3}(\.\d{3})+$/.test(t)) v = t.replace('.', ',');
+    pos = v.length;
+  }
+  const antes = soDigitosVirgula(v.slice(0, pos)).replace(/,(?=.*,)/g, '').length;
+  const novo = milhar(v);
+  if (novo !== el.value) {
+    el.value = novo;
+    let cnt = 0, np = 0;
+    while (np < novo.length && cnt < antes) { if (novo[np] !== '.') cnt++; np++; }
+    try { el.setSelectionRange(np, np); } catch (e) {}
+  }
 }
 
 /* ---------- Resultado ---------- */
@@ -823,6 +882,9 @@ function atualizar() {
   out('dFuel', fmt(c.combustivel));
   out('dWear', fmt(c.desgasteVeic));
   out('dLit', nf(c.litros) + ' l');
+  const cc = custoCarro(S);
+  out('carroMensal', fmt(cc.mensal));
+  out('carroPorKm', cc.km > 0 ? fmt(cc.porKm) : '—');
   S.materiais.forEach((m, i) => { const el = document.getElementById('m' + i + '-t'); if (el) el.textContent = fmt(num(m.q) * num(m.c) * (1 + num(m.p) / 100)); });
   desenharResultado(c);
   desenharComparacao(c);
@@ -837,6 +899,7 @@ function desenharResultado(c) {
   const avisos = [];
   if (c.divisor <= 0) avisos.push(['bad', 'Impostos, taxa de cartão e margem somam 100% ou mais. Reduza algum deles para o cálculo funcionar.']);
   if (c.modo === 'extra') {
+    if (c.horasExtra > 0 && c.tempoHoras > 0 && c.horasExtra <= c.tempoHoras && c.fixos > 0) avisos.push(['bad', 'As horas por mês do extra (' + nf(c.horasExtra) + ' h) são iguais ou menores que a duração deste trabalho (' + nf(c.tempoHoras) + ' h). Parece que você colocou a duração do trabalho no passo 1: ali vai o total de horas do mês, e isso faz o preço ficar altíssimo. Se não sabe, deixe em branco.']);
     if (c.horasExtra <= 0) avisos.push(['', c.ganhoHora > 0
       ? 'Sem as horas do extra, os custos fixos não entram no preço. Veja o passo 4 para saber quantas vendas pagam esses custos.'
       : 'Sem as horas do extra e sem o ganho por hora, o seu tempo não entra no preço. Informe um dos dois em “Seu tempo no extra”.']);
@@ -847,6 +910,7 @@ function desenharResultado(c) {
   if (c.tempoHoras <= 0) avisos.push(['', 'Informe o tempo de trabalho no passo 2 para incluir a mão de obra no preço.']);
   if (S.blocos.deslocamento && num(S.dist) > 0 && num(S.consumo) <= 0) avisos.push(['', 'Informe o consumo do carro (km por litro) para calcular o combustível.']);
   if (S.blocos.deslocamento && num(S.dist) > 0 && num(S.litro) <= 0) avisos.push(['', 'Informe o preço do litro para calcular o combustível.']);
+  if (S.blocos.deslocamento && num(S.dist) > 0 && num(S.desgasteKm) <= 0) avisos.push(['', 'O desgaste do carro (pneus, manutenção, depreciação) ainda não está no preço. Use “Não sabe o desgaste por km? Calcule aqui” no passo 2.']);
   if (c.unid <= 0) avisos.push(['bad', 'Informe pelo menos 1 unidade por lote.']);
 
   const ok = c.divisor > 0 && c.unid > 0;
@@ -1015,6 +1079,7 @@ function desenharEquilibrio(c) {
 const form = document.getElementById('form');
 form.addEventListener('input', e => {
   const t = e.target;
+  if (t.getAttribute && t.getAttribute('inputmode') === 'decimal') formatarCampo(t, e);
   if (t.dataset.k) { S[t.dataset.k] = t.value; }
   else if (t.dataset.ck) { S[t.dataset.ck] = t.checked; }
   else if (t.dataset.m !== undefined) { S.materiais[+t.dataset.m][t.dataset.f] = t.value; }
@@ -1024,6 +1089,13 @@ form.addEventListener('input', e => {
 form.addEventListener('click', e => {
   const md = e.target.closest('button[data-modo]');
   if (md) { S.modo = md.dataset.modo; marcarModo(); atualizar(); return; }
+  if (e.target.closest('[data-use-km]')) {
+    const cc = custoCarro(S);
+    if (cc.km <= 0 || cc.porKm <= 0) { const k = document.getElementById('f-carroKm'); if (k) k.focus(); return; }
+    S.desgasteKm = cc.porKm.toFixed(2).replace('.', ',');
+    const el = document.getElementById('f-desgasteKm'); if (el) el.value = S.desgasteKm;
+    atualizar(); return;
+  }
   const add = e.target.closest('[data-add-bloco]');
   if (add) {
     const k = add.dataset.addBloco;
