@@ -258,6 +258,14 @@ details > .body { padding-bottom: 12px; display: grid; gap: 12px; }
 .eq .stats .h { font-size: .68rem; color: var(--cinza); line-height: 1.35; margin-top: 2px; }
 .eq .extra { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; font-size: .88rem; }
 .eq .extra b { color: var(--roxo); font-variant-numeric: tabular-nums; }
+.chartbox { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.chart { width: 100%; height: auto; display: block; max-width: 560px; }
+.chart .cv { font: 600 10.5px var(--font); fill: var(--titulo); font-variant-numeric: tabular-nums; }
+.chart .cx { font: 700 12px var(--font); fill: var(--titulo); }
+.chart .cx2 { font: 500 10px var(--font); fill: var(--cinza); }
+.clegend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .8rem; margin-top: 8px; }
+.clegend li { display: flex; align-items: center; gap: 8px; }
+.clegend .ln { display: inline-block; width: 26px; height: 0; }
 .eq .formula { font-size: .72rem; color: var(--cinza); margin-top: 12px; }
 
 .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: #fff; border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(15, 81, 50, .1);
@@ -357,7 +365,7 @@ details > .body { padding-bottom: 12px; display: grid; gap: 12px; }
         <li><span class="n">1</span>Conte sobre o seu negócio e seus custos fixos</li>
         <li><span class="n">2</span>Informe o tempo e os custos do produto ou serviço</li>
         <li><span class="n">3</span>Compare o preço ideal com o seu preço e com o mercado</li>
-        <li><span class="n">4</span>Veja quantas vendas faltam para pagar os custos fixos</li>
+        <li><span class="n">4</span>Veja quantas vendas pagam os custos e a sua retirada</li>
       </ol>
       <a class="btn" href="#calculadora" data-go="calculadora">Fazer meu cálculo
         <svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -872,13 +880,17 @@ function desenharComparacao(c) {
   const k = c.cmp;
   document.getElementById('ideal-box').innerHTML = ok
     ? '<div class="ideal"><div><div class="k">Seu preço ideal, por unidade</div><div class="n">' + fmt(c.sugUn) + '</div></div>' +
-      '<div class="side"><span>Mínimo, sem lucro</span><b>' + fmt(c.minUn) + '</b></div></div>'
+      '<div class="side"><span>Mínimo, sem lucro extra</span><b>' + fmt(c.minUn) + '</b>' +
+      '<span style="margin-top:6px">Espaço para negociar</span><b>' + fmt(c.sugUn - c.minUn) + ' (' + pct(c.sugUn > 0 ? (c.sugUn - c.minUn) / c.sugUn : 0) + ')</b></div></div>' +
+      '<p class="hint" style="margin-top:8px">' + (c.mo > 0
+        ? 'Entre o mínimo e o ideal fica a sua margem de lucro. Um desconto nessa faixa reduz só o lucro daquela venda: o mínimo ainda paga custos, impostos, a sua retirada e os custos fixos do seu tempo, desde que você venda as horas previstas no passo 1. Abaixo do mínimo, a venda passa a tirar dinheiro do seu bolso.'
+        : 'Entre o mínimo e o ideal fica a sua margem de lucro, que pode ser usada em descontos. Atenção: sem o tempo de trabalho no passo 2, o mínimo cobre só custos do produto, impostos e taxas, sem pagar a sua retirada.') + '</p>'
     : '<div class="ideal"><div><div class="k">Seu preço ideal, por unidade</div><div class="n">—</div></div><div class="side"><span>Corrija os avisos do resultado</span></div></div>';
 
   // Seu preço x preço ideal
   let a = '<div class="cmp"><h3>Seu preço × preço ideal</h3>';
-  if (c.p === null || !ok) {
-    a += '<p class="hint">Preencha o preço que você cobra ou pretende cobrar para comparar com o ideal.</p>';
+  if (c.p === null || !ok || !k.atualIdeal) {
+    a += '<p class="hint">' + (c.p !== null && ok ? 'Ainda não há custos suficientes para calcular um preço ideal. Preencha o tempo de trabalho e os custos no passo 2.' : 'Preencha o preço que você cobra ou pretende cobrar para comparar com o ideal.') + '</p>';
   } else {
     const rot = { ok: 'Fecha a conta', warn: 'Abaixo da sua margem', bad: 'Abaixo do mínimo' }[c.status];
     a += '<span class="pill ' + c.status + '">' + rot + '</span>' +
@@ -899,8 +911,8 @@ function desenharComparacao(c) {
 
   // Mercado
   let b = '<div class="cmp"><h3>Mercado</h3>';
-  if (c.c === null || !ok) {
-    b += '<p class="hint">Preencha o preço da concorrência para ver como você fica frente ao mercado.</p>';
+  if (c.c === null || !ok || !k.idealMercado) {
+    b += '<p class="hint">' + (c.c !== null && ok ? 'Ainda não há custos suficientes para calcular um preço ideal e comparar com o mercado.' : 'Preencha o preço da concorrência para ver como você fica frente ao mercado.') + '</p>';
   } else {
     const cobre = c.c >= c.minUn - 0.005;
     const pillM = cobre ? (c.c >= c.sugUn - 0.005 ? 'ok' : 'warn') : 'bad';
@@ -926,30 +938,75 @@ function desenharComparacao(c) {
   document.getElementById('cmp-out').innerHTML = a + b;
 }
 
+function passoNice(raw) {
+  const c = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000];
+  return c.find(x => x >= raw) || Math.ceil(raw);
+}
+const fmtC = x => (x >= 10000 ? 'R$ ' + nf(Math.round(x / 1000)) + ' mil' : fmt(x).replace(',00', ''));
+
+function graficoVendas(sobra, fixos, total, rotMeta) {
+  const alvo = total;                                   // fixos + retirada (ou só fixos)
+  const vAlvo = Math.ceil(alvo / sobra - 1e-9);
+  const nmax = Math.max(5, Math.ceil(vAlvo * 1.25));
+  const passo = passoNice(nmax / 5);
+  const pts = Array.from(new Set([1, 1, 2, 3, 4, 5].map((k, i) => (i === 0 ? 1 : k * passo))));
+  const W = 360, H = 250, ml = 8, mr = 8, mt = 22, mb = 38;
+  const iw = W - ml - mr, ih = H - mt - mb;
+  const ymax = Math.max(pts[pts.length - 1] * sobra, alvo) * 1.12;
+  const y = v => mt + ih - (v / ymax) * ih;
+  const bw = iw / pts.length;
+  let svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Quanto sobra com cada número de vendas, comparado aos custos fixos e à retirada">';
+  svg += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="var(--line)"/>';
+  pts.forEach((n, i) => {
+    const v = n * sobra;
+    const cor = v >= alvo - 0.005 ? 'var(--verde)' : (fixos > 0 && v >= fixos - 0.005 && alvo > fixos ? '#8FCFB0' : '#C3CCC6');
+    const x = ml + i * bw + bw * 0.18, w = bw * 0.64;
+    svg += '<rect x="' + x + '" y="' + y(v) + '" width="' + w + '" height="' + (y(0) - y(v)) + '" rx="4" fill="' + cor + '"/>';
+    svg += '<text x="' + (x + w / 2) + '" y="' + (y(v) - 5) + '" text-anchor="middle" class="cv">' + fmtC(v) + '</text>';
+    svg += '<text x="' + (x + w / 2) + '" y="' + (H - mb + 15) + '" text-anchor="middle" class="cx">' + nf(n) + '</text>';
+    svg += '<text x="' + (x + w / 2) + '" y="' + (H - mb + 27) + '" text-anchor="middle" class="cx2">' + (n === 1 ? 'venda' : 'vendas') + '</text>';
+  });
+  if (fixos > 0) {
+    svg += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(fixos) + '" y2="' + y(fixos) + '" stroke="#C7A24B" stroke-width="2" stroke-dasharray="6 4"/>';
+  }
+  if (alvo > fixos + 0.005) {
+    svg += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(alvo) + '" y2="' + y(alvo) + '" stroke="var(--roxo)" stroke-width="2"/>';
+  }
+  svg += '</svg>';
+  const leg = '<ul class="clegend">' +
+    (fixos > 0 ? '<li><i class="ln" style="border-top:3px dashed #C7A24B"></i>Custos fixos: ' + fmt(fixos) + '</li>' : '') +
+    (alvo > fixos + 0.005 ? '<li><i class="ln" style="border-top:3px solid var(--roxo)"></i>' + rotMeta + ': ' + fmt(alvo) + '</li>' : '') + '</ul>';
+  return '<div class="chartbox"><h3>Quanto sobra com cada número de vendas</h3>' +
+    '<p class="hint" style="margin-bottom:6px">Valor que sobra depois de impostos, taxas e custos do produto. Barras acima da linha pagam aquela conta.</p>' +
+    svg + leg + '</div>';
+}
+
 function desenharEquilibrio(c) {
   const e = c.eq;
   const vtxt = n => nf(n) + (n === 1 ? ' venda' : ' vendas');
-  let h = '<div class="step-head"><span class="step-n roxo">4</span><h2>Quantas vendas para pagar o custo fixo</h2></div>' +
-    '<p class="leadp">Quantas vendas por mês você precisa fazer para cobrir seus custos fixos. Usa o preço que você cobra, no passo 3, ou, se estiver vazio, o preço ideal.</p>';
+  let h = '<div class="step-head"><span class="step-n roxo">4</span><h2>Quantas vendas para pagar toda a operação</h2></div>' +
+    '<p class="leadp">Quantas vendas por mês você precisa fazer para cobrir os custos fixos e ainda ganhar o que definiu. Usa o preço que você cobra, no passo 3, ou, se estiver vazio, o preço ideal.</p>';
+  const temMeta = e.metaExtra > 0;
   if (c.divisor <= 0 || c.unid <= 0) {
     h += '<div class="alert">Corrija os avisos do resultado para calcular.</div>';
-  } else if (c.fixos <= 0 && e.metaExtra <= 0) {
-    h += '<div class="alert">Você ainda não informou custos fixos, então não há o que cobrir. Preencha o passo 1.</div>';
+  } else if (c.fixos <= 0 && !temMeta) {
+    h += '<div class="alert">Você ainda não informou custos fixos nem quanto quer ganhar, então não há o que cobrir. Preencha o passo 1.</div>';
   } else if (e.sobra <= 0) {
     h += '<div class="alert bad">Com o preço de ' + fmt(e.precoBE) + ', cada venda não cobre nem os impostos e os custos do produto. Aumente o preço ou reduza custos.</div>';
   } else {
-    if (c.fixos > 0) {
-      h += '<p class="big">' + vtxt(e.vendasFixos) + '</p><p class="sub">por mês para cobrir ' + fmt(c.fixos) + ' de custos fixos, cerca de ' + nf(Math.ceil(e.vendasFixos / 4)) + ' por semana.</p>';
-    }
+    const meta = c.modo === 'principal' ? 'sua retirada' : 'o seu ganho por hora';
+    const rotMeta = c.modo === 'principal' ? 'Custos fixos + retirada' : 'Custos fixos + seu ganho por hora';
+    const vTotal = temMeta ? e.vendasMeta : e.vendasFixos;
+    const total = c.fixos + e.metaExtra;
+    h += '<p class="big">' + vtxt(vTotal) + '</p><p class="sub">por mês para pagar ' + (temMeta ? (c.fixos > 0 ? 'os custos fixos e ' + meta : meta) : 'os custos fixos') +
+      ' (' + fmt(total) + '), cerca de ' + nf(Math.ceil(vTotal / 4)) + ' por semana.</p>';
     h += '<div class="stats">' +
+      (temMeta && c.fixos > 0 ? '<div><div class="k">Só os custos fixos</div><div class="v">' + vtxt(e.vendasFixos) + '</div><div class="h">Ponto de equilíbrio: a partir daqui você não tem prejuízo</div></div>' : '') +
       '<div><div class="k">Preço por venda</div><div class="v">' + fmt(e.precoBE) + '</div><div class="h">' + (e.usaSugerido ? 'Preço ideal' : 'Preço que você cobra') + '</div></div>' +
       '<div><div class="k">Sobra por venda</div><div class="v">' + fmt(e.sobra) + '</div><div class="h">Preço menos impostos, taxas e custos do produto</div></div>' +
       '<div><div class="k">Custos fixos do mês</div><div class="v">' + fmt(c.fixos) + '</div><div class="h">Total do passo 1</div></div></div>';
-    if (e.vendasMeta !== null) {
-      const alvo = c.modo === 'principal' ? 'sua retirada de ' + fmt(e.metaExtra) : fmt(e.metaExtra) + ' pelas suas horas';
-      h += '<p class="extra">Para cobrir também ' + alvo + ': <b>' + vtxt(e.vendasMeta) + ' por mês</b>.</p>';
-    }
-    h += '<p class="formula">Cada venda é uma unidade. Conta: custos fixos ÷ sobra por venda, arredondado para cima.</p>';
+    h += graficoVendas(e.sobra, c.fixos, total, rotMeta);
+    h += '<p class="formula">Cada venda é uma unidade. Conta: (custos fixos + ' + (c.modo === 'principal' ? 'retirada' : 'ganho por hora') + ') ÷ sobra por venda, arredondado para cima.</p>';
   }
   document.getElementById('equilibrio').innerHTML = h;
 }
