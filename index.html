@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MeuValor</title>
+<meta name="description" content="Calculadora de preço para profissionais autônomos. Descubra quanto cobrar pelo seu produto ou serviço considerando custos, impostos e o lucro que você merece.">
+<meta property="og:title" content="MeuValor: seu trabalho tem valor. Saiba quanto.">
+<meta property="og:description" content="Calculadora simples e completa para definir o preço certo do seu produto ou serviço.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F5132'/%3E%3Cpath d='M7 17l5 5 13-13' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: landing page em faixas (cabeçalho, hero, benefícios, como funciona, calculadora, para quem é, FAQ, rodapé).
+   Calculadora em duas colunas no desktop (formulário + resultado fixo) e em uma coluna no celular com barra de preço fixa. */
+:root {
+  --verde: #0F5132;
+  --verde2: #2E7D5B;
+  --claro: #E8F1EC;
+  --roxo: #6B3FA0;
+  --roxo-soft: #F0EAF8;
+  --bg: #FAFAF7;
+  --cinza: #6B7280;
+  --titulo: #0B3B2C;
+  --ink: #1B2E25;
+  --surface: #FFFFFF;
+  --line: #DCE6DF;
+  --field: #FBFCFA;
+  --good: #1F7A4D; --good-soft: #E3F2EA;
+  --warn: #8A5700; --warn-soft: #FBF0D9;
+  --bad: #B3261E; --bad-soft: #FBE4E1;
+  --s-mat: #2E7D5B; --s-mo: #0F5132; --s-out: #6B7280; --s-imp: #6B3FA0; --s-car: #A78BCB; --s-mar: #8FCFB0;
+  --shadow: 0 12px 32px rgba(15, 81, 50, .12);
+  --font: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; margin: 0; }
+h1, h2, h3, p, ul, ol { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+h1, h2, h3 { color: var(--titulo); text-wrap: balance; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--roxo); outline-offset: 2px; }
+.band { width: 100%; }
+.in { width: min(100%, 1152px); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--verde); }
+h2.sec { font-size: clamp(1.6rem, 5vw, 2.25rem); font-weight: 800; line-height: 1.15; letter-spacing: -.015em; }
+.muted { color: var(--cinza); }
+
+/* Botões */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; padding: 13px 24px; font-weight: 600; font-size: .95rem;
+  border: 2px solid var(--verde); background: var(--verde); color: #fff; text-decoration: none; transition: background .15s, border-color .15s, color .15s; }
+.btn:hover { background: var(--roxo); border-color: var(--roxo); }
+.btn.sec { background: transparent; color: var(--verde); }
+.btn.sec:hover { background: var(--roxo-soft); color: var(--roxo); border-color: var(--roxo); }
+.btn.sm { padding: 9px 16px; font-size: .82rem; }
+.btn.danger { border-color: var(--bad); color: var(--bad); background: transparent; }
+.btn svg { width: 16px; height: 16px; }
+svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Cabeçalho */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 18px; }
+.logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.4rem; color: var(--verde); text-decoration: none; letter-spacing: -.01em; }
+.logo svg { width: 34px; height: 30px; }
+.links { display: none; gap: 30px; font-size: .85rem; font-weight: 500; }
+.links a { text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
+.links a:hover { color: var(--roxo); border-color: var(--roxo); }
+@media (min-width: 860px) { .links { display: flex; } }
+
+/* Hero */
+.hero .in { display: grid; gap: 28px; padding-block: 24px 56px; align-items: center; }
+@media (min-width: 860px) { .hero .in { grid-template-columns: 1.05fr 1fr; gap: 40px; padding-block: 40px 72px; } }
+.badge { display: inline-block; background: var(--claro); color: var(--verde); border-radius: 999px; padding: 7px 16px; font-size: .75rem; font-weight: 600; }
+.hero h1 { font-size: clamp(2.3rem, 9vw, 3.7rem); font-weight: 800; line-height: 1.04; letter-spacing: -.03em; margin: 18px 0 18px; }
+.hero h1 em { font-style: normal; color: var(--verde2); display: block; }
+.hero p.lead { max-width: 46ch; margin-bottom: 26px; font-size: .98rem; }
+.hv { position: relative; min-height: 340px; display: grid; place-items: center; }
+.hv .blob { position: absolute; inset: 0; margin: auto; width: min(100%, 440px); height: auto; z-index: 0; }
+.pricecard { position: relative; z-index: 1; width: min(100%, 290px); background: #fff; border-radius: 18px; box-shadow: var(--shadow); padding: 20px; }
+.pricecard .t { font-size: .8rem; font-weight: 600; color: var(--titulo); }
+.pricecard .v { font-size: 1.9rem; font-weight: 800; color: var(--verde); letter-spacing: -.02em; margin-top: 4px; }
+.pricecard .s { font-size: .75rem; color: var(--cinza); }
+.pricecard dl { margin: 14px 0; display: grid; gap: 0; }
+.pricecard dl div { display: flex; justify-content: space-between; font-size: .75rem; padding: 8px 0; border-top: 1px solid var(--line); }
+.pricecard dt { color: var(--cinza); }
+.pricecard dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pricecard .tag { position: absolute; top: -16px; right: -10px; background: var(--roxo); color: #fff; border-radius: 999px; padding: 7px 13px; font-size: .75rem; font-weight: 700; display: flex; gap: 6px; align-items: center; box-shadow: 0 8px 20px rgba(107, 63, 160, .3); }
+.pricecard .tag svg { width: 14px; height: 14px; }
+.pricecard .btn { width: 100%; padding: 11px 16px; font-size: .82rem; }
+
+/* Faixa de benefícios */
+.strip { background: var(--claro); }
+.feats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px 24px; padding-block: 40px; }
+.feat .ico { width: 52px; height: 52px; border-radius: 14px; background: #fff; box-shadow: 0 6px 16px rgba(15, 81, 50, .1); display: grid; place-items: center; color: var(--verde); margin-bottom: 14px; }
+.feat h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.feat p { font-size: .86rem; color: var(--cinza); max-width: 26ch; }
+
+/* Como funciona */
+.how .in { display: grid; gap: 40px; padding-block: 64px; align-items: center; }
+@media (min-width: 860px) { .how .in { grid-template-columns: 1fr 1fr; gap: 56px; } }
+.how h2 { margin: 8px 0 8px; }
+.steps { display: grid; gap: 14px; margin: 24px 0 28px; }
+.steps li { display: flex; gap: 14px; align-items: center; font-size: .95rem; }
+.steps .n { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--verde); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.mockwrap { position: relative; display: grid; place-items: center; min-height: 360px; }
+.mockwrap .blob { position: absolute; inset: 0; margin: auto; width: min(100%, 420px); height: auto; }
+.mock { position: relative; width: min(100%, 330px); background: #fff; border-radius: 16px; box-shadow: var(--shadow); padding: 18px; font-size: .78rem; }
+.mock .mt { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--verde); font-size: .95rem; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.mock .mt svg { width: 22px; height: 20px; }
+.mock b { display: block; margin: 10px 0 6px; font-size: .78rem; color: var(--titulo); }
+.mock .row { display: flex; justify-content: space-between; background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; }
+.mock .row span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+.mock .sl { height: 6px; border-radius: 3px; background: var(--line); position: relative; margin: 12px 0 4px; }
+.mock .sl i { position: absolute; left: 0; top: 0; bottom: 0; width: 40%; background: var(--verde); border-radius: 3px; }
+.mock .sl u { position: absolute; left: 40%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--verde); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.mock .slv { display: flex; justify-content: space-between; color: var(--cinza); }
+.mock .go { margin-top: 12px; background: var(--verde); color: #fff; text-align: center; border-radius: 8px; padding: 9px; font-weight: 600; }
+
+/* Calculadora */
+.calc { background: var(--bg); border-top: 1px solid var(--line); }
+.calc .in { padding-block: 64px; }
+.calc-head { margin-bottom: 26px; display: grid; gap: 8px; }
+.calc-head p { max-width: 62ch; color: var(--cinza); font-size: .95rem; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.notice { background: var(--roxo-soft); border-radius: 14px; padding: 12px 16px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; font-size: .88rem; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.col { display: grid; gap: 20px; min-width: 0; }
+@media (min-width: 960px) {
+  .layout { grid-template-columns: minmax(0, 1fr) 400px; gap: 28px; }
+  .result-card { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+  .bar { display: none !important; }
+}
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; min-width: 0; box-shadow: 0 4px 16px rgba(15, 81, 50, .05); }
+.step-head { display: flex; gap: 12px; align-items: center; margin-bottom: 4px; }
+.step-n { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--verde); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .9rem; }
+.step-n.roxo { background: var(--roxo); }
+.step-head h2 { font-size: 1.2rem; font-weight: 700; letter-spacing: -.01em; }
+.leadp { color: var(--cinza); font-size: .86rem; margin: 6px 0 14px; max-width: 62ch; }
+
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--claro); padding: 5px; border-radius: 999px; margin: 4px 0 8px; }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 11px 8px; font-weight: 600; font-size: .82rem; color: var(--verde); }
+.seg button:hover { color: var(--roxo); }
+.seg button[aria-pressed="true"] { background: var(--verde); color: #fff; }
+#modo-hint { font-size: .84rem; color: var(--cinza); margin-bottom: 10px; }
+#form[data-modo="extra"] [data-only="principal"], #form[data-modo="principal"] [data-only="extra"] { display: none; }
+
+details { border-top: 1px solid var(--line); padding: 12px 0 4px; }
+summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; font-weight: 600; font-size: .95rem; padding-bottom: 10px; }
+summary::-webkit-details-marker { display: none; }
+summary .chev { width: 8px; height: 8px; border-right: 2px solid var(--verde2); border-bottom: 2px solid var(--verde2); transform: rotate(45deg); transition: transform .15s; margin-right: 4px; flex: none; }
+details[open] > summary .chev { transform: rotate(-135deg); }
+summary .sum { margin-left: auto; font-weight: 500; color: var(--cinza); font-variant-numeric: tabular-nums; font-size: .85rem; }
+summary span.t { display: flex; align-items: center; gap: 10px; }
+details > .body { padding-bottom: 12px; display: grid; gap: 12px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.field > label, .lbl { font-size: .78rem; font-weight: 600; color: var(--titulo); }
+.hint { font-size: .72rem; color: var(--cinza); line-height: 1.4; }
+.inp { display: flex; align-items: center; border: 1.5px solid var(--line); background: var(--field); border-radius: 10px; min-width: 0; }
+.inp:focus-within { border-color: var(--verde2); box-shadow: 0 0 0 3px var(--claro); }
+.inp input, .inp select { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: inherit; font: inherit; font-size: 16px; padding: 10px; outline: none; }
+.inp select { appearance: none; -webkit-appearance: none; }
+.inp .ad { color: var(--cinza); font-size: .85rem; white-space: nowrap; }
+.inp .ad.pre { padding-left: 10px; }
+.inp .ad.suf { padding-right: 10px; }
+.inp .ad.pre + input { padding-left: 6px; }
+.inp input:has(+ .ad.suf) { padding-right: 4px; }
+.inp input::placeholder { color: var(--cinza); opacity: .55; }
+
+.stripi { display: flex; flex-wrap: wrap; gap: 6px 22px; background: var(--claro); border-radius: 12px; padding: 11px 14px; font-size: .85rem; }
+.stripi b { font-variant-numeric: tabular-nums; font-size: 1rem; color: var(--verde); }
+
+.mats { display: grid; gap: 10px; }
+.mat { border: 1.5px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 10px; background: var(--field); }
+.mat .inp { background: #fff; }
+.mat-top { display: flex; gap: 8px; align-items: center; }
+.mat-top .inp { flex: 1; }
+.mat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 10px; }
+.mat-total { font-variant-numeric: tabular-nums; font-weight: 600; padding: 10px 0; }
+.icon { flex: none; width: 40px; height: 40px; border: 1.5px solid var(--line); background: #fff; border-radius: 10px; font-size: 1.2rem; line-height: 1; color: var(--cinza); }
+.icon:hover { color: var(--bad); border-color: var(--bad); }
+.empty { color: var(--cinza); font-size: .86rem; padding: 6px 2px; }
+.add { justify-self: start; }
+
+.result-card { padding: 22px 18px; display: grid; gap: 18px; box-shadow: var(--shadow); }
+.result-card .eb { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--cinza); font-weight: 600; overflow-wrap: anywhere; }
+.big { font-weight: 800; font-size: 2.8rem; line-height: 1.05; letter-spacing: -.03em; color: var(--verde); font-variant-numeric: tabular-nums; margin-top: 4px; overflow-wrap: anywhere; }
+.sub { color: var(--cinza); font-size: .82rem; margin-top: 8px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pair > div { background: var(--claro); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.pair .k { font-size: .7rem; color: var(--cinza); }
+.pair .v { font-weight: 700; font-size: 1.1rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; color: var(--titulo); }
+.result-card h3, .eq h3 { font-size: .95rem; font-weight: 700; margin-bottom: 8px; }
+.bar-split { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--line); }
+.bar-split i { display: block; height: 100%; }
+.legend { margin: 10px 0 0; display: grid; gap: 6px; font-size: .82rem; }
+.legend li { display: grid; grid-template-columns: 12px 1fr auto auto; gap: 8px; align-items: center; }
+.legend .dot { width: 10px; height: 10px; border-radius: 3px; }
+.legend .p { color: var(--cinza); font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
+.legend .r { font-variant-numeric: tabular-nums; min-width: 5.5em; text-align: right; font-weight: 600; }
+.pill { display: inline-block; border-radius: 999px; padding: 4px 12px; font-size: .75rem; font-weight: 700; }
+.pill.ok { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.diag { display: grid; gap: 8px; }
+.diag p { font-size: .86rem; }
+.kv { display: flex; justify-content: space-between; gap: 12px; font-size: .86rem; border-top: 1px solid var(--line); padding-top: 8px; }
+.kv b { font-variant-numeric: tabular-nums; }
+.alerts { display: grid; gap: 8px; }
+.alert { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: .82rem; }
+.alert.bad { background: var(--bad-soft); color: var(--bad); }
+
+.eq .big { color: var(--roxo); font-size: 2.4rem; }
+.eq .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.eq .stats > div { background: var(--roxo-soft); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.eq .stats .k { font-size: .7rem; color: var(--cinza); }
+.eq .stats .v { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; color: var(--titulo); overflow-wrap: anywhere; }
+.eq .stats .h { font-size: .68rem; color: var(--cinza); line-height: 1.35; margin-top: 2px; }
+.eq .extra { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; font-size: .88rem; }
+.eq .extra b { color: var(--roxo); font-variant-numeric: tabular-nums; }
+.eq .formula { font-size: .72rem; color: var(--cinza); margin-top: 12px; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: #fff; border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(15, 81, 50, .1);
+  padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bar .k { font-size: .66rem; color: var(--cinza); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.bar .v { font-weight: 800; font-size: 1.4rem; color: var(--verde); font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+/* Para quem é */
+.who .in { padding-block: 64px; display: grid; gap: 28px; }
+.who p.t { max-width: 56ch; color: var(--cinza); margin-top: 8px; font-size: .95rem; }
+.pcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+.pc { background: #fff; border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.pc .art { height: 110px; background: var(--claro); display: grid; place-items: center; }
+.pc .art span { width: 58px; height: 58px; border-radius: 50%; background: #fff; color: var(--verde); display: grid; place-items: center; box-shadow: 0 6px 16px rgba(15, 81, 50, .12); }
+.pc p { padding: 14px 16px 16px; font-weight: 600; font-size: .9rem; color: var(--titulo); }
+
+/* FAQ */
+.faq { background: #fff; border-top: 1px solid var(--line); }
+.faq .in { padding-block: 64px; display: grid; gap: 24px; }
+.faq-list { display: grid; gap: 0; max-width: 780px; }
+.faq-list details { padding: 14px 0 6px; }
+.faq-list summary { font-size: .98rem; }
+.faq-list details p { padding-bottom: 10px; color: var(--cinza); font-size: .9rem; max-width: 66ch; }
+
+/* Rodapé */
+.foot { background: var(--verde); color: #fff; }
+.foot .in { display: grid; gap: 18px; padding-block: 32px; }
+.foot .r1 { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between; }
+.foot .logo { color: #fff; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 8px 26px; font-size: .82rem; }
+.foot nav a { text-decoration: none; opacity: .9; }
+.foot nav a:hover { opacity: 1; text-decoration: underline; }
+.foot .r2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; font-size: .74rem; opacity: .8; border-top: 1px solid rgba(255, 255, 255, .18); padding-top: 14px; }
+@media (prefers-reduced-motion: reduce) { summary .chev, .btn { transition: none; } }
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="in nav">
+    <a class="logo" href="#inicio" data-go="inicio" aria-label="MeuValor, início">
+      <svg viewBox="0 0 34 30" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l7 7L25 6" stroke="#2E7D5B" stroke-width="5"/><path d="M11 13l7 7L32 3" stroke="#0F5132" stroke-width="5"/></svg>
+      MeuValor
+    </a>
+    <nav class="links" aria-label="Principal">
+      <a href="#inicio" data-go="inicio">Início</a>
+      <a href="#como-funciona" data-go="como-funciona">Como funciona</a>
+      <a href="#beneficios" data-go="beneficios">Benefícios</a>
+      <a href="#faq" data-go="faq">Perguntas frequentes</a>
+    </nav>
+    <a class="btn sm" href="#calculadora" data-go="calculadora">Acessar</a>
+  </div>
+</header>
+
+<section class="band hero" id="inicio">
+  <div class="in">
+    <div>
+      <span class="badge">Calculadora de preço para profissionais autônomos</span>
+      <h1>Seu trabalho tem valor. <em>Saiba quanto.</em></h1>
+      <p class="lead">O <b>MeuValor</b> é uma calculadora <b>simples e completa</b> para te ajudar a definir o <b>preço certo do seu produto ou serviço</b>, considerando todos os seus <b>custos</b>, <b>impostos</b> e o <b>lucro</b> que você merece.</p>
+      <a class="btn" href="#calculadora" data-go="calculadora">Começar agora
+        <svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+    <div class="hv" aria-hidden="true">
+      <svg class="blob" viewBox="0 0 480 400"><path d="M290 30c80 8 150 60 160 140s-24 150-92 196-160 40-226 0S26 270 44 186 130 20 290 30z" fill="#2E7D5B"/><path d="M60 250c-30 40-10 100 40 120s110 6 120-20-60-40-90-70-50-60-70-30z" fill="#E8F1EC"/><g stroke="#0F5132" stroke-width="3" stroke-linecap="round"><path d="M400 44l14 24M430 34l-3 28M452 66l-28 6"/></g></svg>
+      <div class="pricecard">
+        <span class="tag"><svg class="i" viewBox="0 0 24 24"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>39% de lucro</span>
+        <div class="t">Seu preço ideal</div>
+        <div class="v">R$ 180,00</div>
+        <div class="s">por serviço</div>
+        <dl><div><dt>Custos</dt><dd>R$ 82,00</dd></div><div><dt>Impostos</dt><dd>R$ 28,00</dd></div><div><dt>Lucro desejado</dt><dd>R$ 70,00</dd></div></dl>
+        <span class="btn" style="pointer-events:none">Exemplo ilustrativo</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band strip" id="beneficios">
+  <div class="in feats">
+    <div class="feat"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M8 6h8M16 14v4M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg></div><h3>Cálculo completo</h3><p>Inclui custos, impostos, horas trabalhadas e lucro desejado.</p></div>
+    <div class="feat"><div class="ico"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><h3>Simples e rápido</h3><p>Em poucos minutos você sabe quanto cobrar pelo seu trabalho.</p></div>
+    <div class="feat"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Mais segurança</h3><p>Evite prejuízos e cobre um preço justo pelo seu trabalho.</p></div>
+    <div class="feat"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></div><h3>Valorize seu esforço</h3><p>Seu trabalho é importante. E o seu preço também.</p></div>
+  </div>
+</section>
+
+<section class="band how" id="como-funciona">
+  <div class="in">
+    <div>
+      <span class="eyebrow">Como funciona</span>
+      <h2 class="sec">Em 4 passos, você descobre o seu preço ideal.</h2>
+      <p class="muted" style="font-size:.95rem">É rápido, prático e feito para a sua realidade, seja o seu trabalho principal ou um extra.</p>
+      <ol class="steps">
+        <li><span class="n">1</span>Conte sobre o seu negócio e seus custos fixos</li>
+        <li><span class="n">2</span>Adicione o que o produto ou serviço custa</li>
+        <li><span class="n">3</span>Defina o lucro que deseja</li>
+        <li><span class="n">4</span>Veja o preço ideal e quantas vendas faltam para pagar os custos fixos</li>
+      </ol>
+      <a class="btn" href="#calculadora" data-go="calculadora">Fazer meu cálculo
+        <svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+    <div class="mockwrap" aria-hidden="true">
+      <svg class="blob" viewBox="0 0 440 400"><path d="M240 30c80 10 160 60 170 150s-50 150-130 180S90 370 50 290 40 130 110 70 190 24 240 30z" fill="#E8F1EC"/><g stroke="#0F5132" stroke-width="3" stroke-linecap="round"><path d="M372 50l14 24M20 330l22 -14M30 360l16 -22"/></g></svg>
+      <div class="mock">
+        <div class="mt"><svg viewBox="0 0 34 30" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l7 7L25 6" stroke="#2E7D5B" stroke-width="5"/><path d="M11 13l7 7L32 3" stroke="#0F5132" stroke-width="5"/></svg>MeuValor</div>
+        <b>1. Custos do negócio</b>
+        <div class="row"><span>Contas fixas</span><span>R$ 365,00</span></div>
+        <div class="row"><span>Software</span><span>R$ 120,00</span></div>
+        <b>2. Produto ou serviço</b>
+        <div class="row"><span>Materiais</span><span>R$ 50,00</span></div>
+        <b>3. Lucro desejado</b>
+        <div class="sl"><i></i><u></u></div><div class="slv"><span></span><span>40%</span></div>
+        <div class="go">Calcular preço</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band calc" id="calculadora">
+  <div class="in">
+    <div class="calc-head">
+      <span class="eyebrow">Calculadora</span>
+      <h2 class="sec">Calcule o seu preço.</h2>
+      <p>Os números ficam salvos só neste aparelho e não são enviados para ninguém.</p>
+      <div class="toolbar">
+        <button class="btn sec sm" id="btn-novo" type="button">Novo produto</button>
+        <button class="btn sec sm" id="btn-zero" type="button">Começar do zero</button>
+      </div>
+    </div>
+    <div class="notice" id="notice" hidden>
+      <span><b>Exemplo carregado</b> (uma confeiteira que faz brownies). Troque pelos seus números ou comece do zero.</span>
+      <button class="btn sm" id="btn-zero2" type="button">Começar do zero</button>
+    </div>
+    <div class="layout">
+      <div class="col" id="form"></div>
+      <aside class="card result-card" id="resultado" aria-live="polite"></aside>
+    </div>
+  </div>
+</section>
+
+<section class="band who">
+  <div class="in">
+    <div>
+      <span class="eyebrow">Para quem é</span>
+      <h2 class="sec" style="margin-top:8px">Feito para todos os profissionais autônomos.</h2>
+      <p class="t">Seja você um prestador de serviços, um vendedor de produtos, um freelancer ou um profissional liberal com um extra por fora, o MeuValor é para você.</p>
+    </div>
+    <div class="pcards">
+      <div class="pc"><div class="art"><span><svg class="i" viewBox="0 0 24 24" style="width:28px;height:28px"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span></div><p>Quem vende produtos<br>e doces</p></div>
+      <div class="pc"><div class="art"><span><svg class="i" viewBox="0 0 24 24" style="width:28px;height:28px"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span></div><p>Eletricistas<br>e técnicos</p></div>
+      <div class="pc"><div class="art"><span><svg class="i" viewBox="0 0 24 24" style="width:28px;height:28px"><path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></span></div><p>Designers<br>e criativos</p></div>
+      <div class="pc"><div class="art"><span><svg class="i" viewBox="0 0 24 24" style="width:28px;height:28px"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7z"/></svg></span></div><p>Personal trainers<br>e professores</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band faq" id="faq">
+  <div class="in">
+    <div><span class="eyebrow">Perguntas frequentes</span><h2 class="sec" style="margin-top:8px">Dúvidas comuns.</h2></div>
+    <div class="faq-list">
+      <details><summary><span class="t"><i class="chev"></i>Meus dados ficam salvos em algum lugar?</span></summary><p>Ficam salvos apenas no seu aparelho, para você não precisar preencher tudo de novo. Nada é enviado para servidor nenhum. Se você limpar os dados do navegador, eles somem.</p></details>
+      <details><summary><span class="t"><i class="chev"></i>Posso usar se o meu serviço é só um extra?</span></summary><p>Pode. Na calculadora, escolha “Extra ou esporádico”. Nesse modo você não precisa informar uma retirada mensal: basta dizer quais custos tem para operar o extra e quantas horas por mês dedica a ele.</p></details>
+      <details><summary><span class="t"><i class="chev"></i>Como é calculado o número de vendas para cobrir o custo fixo?</span></summary><p>Pegamos o preço de uma venda, tiramos impostos, taxas e o custo do produto, e dividimos o custo fixo do mês pelo que sobra. O resultado é arredondado para cima, porque não existe meia venda.</p></details>
+      <details><summary><span class="t"><i class="chev"></i>Qual imposto devo colocar?</span></summary><p>Se você é MEI, que paga um valor fixo por mês, coloque 0%. Se está no Simples Nacional, use a alíquota da sua faixa. Na dúvida, confirme com um contador.</p></details>
+      <details><summary><span class="t"><i class="chev"></i>O preço sugerido é garantido?</span></summary><p>Ele é um ponto de partida baseado nos seus números. Compare com o que o mercado cobra e ajuste ao seu caso, porque cada negócio tem particularidades.</p></details>
+    </div>
+  </div>
+</section>
+
+<footer class="band foot">
+  <div class="in">
+    <div class="r1">
+      <a class="logo" href="#inicio" data-go="inicio"><svg viewBox="0 0 34 30" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l7 7L25 6" stroke="#8FCFB0" stroke-width="5"/><path d="M11 13l7 7L32 3" stroke="#fff" stroke-width="5"/></svg>MeuValor</a>
+      <nav aria-label="Rodapé"><a href="#inicio" data-go="inicio">Início</a><a href="#como-funciona" data-go="como-funciona">Como funciona</a><a href="#beneficios" data-go="beneficios">Benefícios</a><a href="#faq" data-go="faq">Perguntas frequentes</a></nav>
+    </div>
+    <div class="r2"><span>© 2026 MeuValor. Todos os direitos reservados.</span><span>Seu trabalho tem valor.</span></div>
+  </div>
+</footer>
+
+<div class="bar" id="bar" hidden>
+  <div><div class="k">Preço sugerido por unidade</div><div class="v" id="bar-v">R$ 0,00</div></div>
+  <button class="btn sm" id="bar-go" type="button">Ver resultado</button>
+</div>
+
+<script>
+/*CALC_START*/
+function num(v) {
+  if (v === null || v === undefined) return 0;
+  let t = String(v).trim().replace(/\s/g, '').replace(/^R\$/i, '').replace('%', '');
+  if (t === '') return 0;
+  if (t.indexOf(',') !== -1) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  const n = parseFloat(t);
+  return isFinite(n) ? n : 0;
+}
+function vazio(v) { return v === null || v === undefined || String(v).trim() === ''; }
+
+function calcular(s) {
+  const n = k => num(s[k]);
+  const modo = s.modo === 'extra' ? 'extra' : 'principal';
+  const contas = n('energia') + n('aluguel') + n('celular') + n('internet') + n('transporte') + n('outrasContas');
+  const desgaste = n('vidaUtil') > 0 ? n('valorEquip') / n('vidaUtil') : 0;
+  const outrosFixos = n('marketing') + n('contab') + n('software') + n('outrosFixos');
+  const fixos = contas + desgaste + outrosFixos;
+
+  const horasPrincipal = n('hDia') * n('dSem') * n('sMes') * (n('aprov') / 100);
+  const horasExtra = n('horasExtra');
+  const horasCob = modo === 'extra' ? horasExtra : horasPrincipal;
+  const retirada = modo === 'principal' ? n('retirada') : 0;
+  const ganhoHora = modo === 'extra' ? n('ganhoHora') : 0;
+  const custoHora = horasCob > 0
+    ? (modo === 'extra' ? fixos / horasCob + ganhoHora : (retirada + fixos) / horasCob)
+    : 0;
+
+  const imp = n('imposto') / 100, car = n('cartao') / 100, mar = n('margem') / 100;
+  const divisor = 1 - (imp + car + mar);
+  const divMin = 1 - imp - car;
+  const unid = n('unidades') > 0 ? n('unidades') : 0;
+
+  const matSub = (s.materiais || []).reduce((a, m) => a + num(m.q) * num(m.c), 0);
+  const mat = matSub * (1 + n('perda') / 100);
+  const mo = n('horas') * custoHora;
+  const outrosDir = n('outrosDiretos');
+  const custoDireto = mat + mo + outrosDir;
+
+  const precoLote = divisor > 0 ? custoDireto / divisor : 0;
+  const minLote = divMin > 0 ? custoDireto / divMin : 0;
+  const porUn = x => (unid > 0 ? x / unid : 0);
+
+  const destino = [
+    ['Materiais', mat, 's-mat'],
+    ['Mão de obra', mo, 's-mo'],
+    ['Outros custos diretos', outrosDir, 's-out'],
+    ['Impostos', precoLote * imp, 's-imp'],
+    ['Taxas de cartão', precoLote * car, 's-car'],
+    ['Margem de lucro', precoLote * mar, 's-mar'],
+  ];
+  const sugUn = porUn(precoLote), minUn = porUn(minLote), custoUn = porUn(custoDireto);
+
+  const temPreco = !vazio(s.preco) && num(s.preco) > 0;
+  const p = temPreco ? num(s.preco) : null;
+  let lucroLote = null, lucroUn = null, margemReal = null, status = null;
+  if (p !== null) {
+    const receitaLote = p * unid;
+    lucroLote = receitaLote * divMin - custoDireto;
+    lucroUn = porUn(lucroLote);
+    margemReal = receitaLote > 0 ? lucroLote / receitaLote : 0;
+    if (p < minUn - 0.005) status = 'bad';
+    else if (p < sugUn - 0.005) status = 'warn';
+    else status = 'ok';
+  }
+  const c = !vazio(s.concorrencia) && num(s.concorrencia) > 0 ? num(s.concorrencia) : null;
+  let mercado = null;
+  if (p !== null && c !== null) {
+    if (p > c) mercado = { dir: 'acima', pct: p / c - 1 };
+    else if (p < c) mercado = { dir: 'abaixo', pct: 1 - p / c };
+    else mercado = { dir: 'igual', pct: 0 };
+  }
+
+  // Ponto de equilíbrio: quantas vendas pagam os custos fixos
+  const precoBE = p !== null ? p : sugUn;
+  const varUn = unid > 0 ? (mat + outrosDir) / unid : 0;
+  const sobra = precoBE * divMin - varUn;
+  const metaExtra = modo === 'principal' ? retirada : ganhoHora * horasExtra;
+  const vendas = meta => (meta > 0 && sobra > 0 ? Math.ceil(meta / sobra - 1e-9) : null);
+  const eq = { precoBE, usaSugerido: p === null, varUn, sobra, metaExtra,
+    vendasFixos: vendas(fixos), vendasMeta: metaExtra > 0 ? vendas(fixos + metaExtra) : null };
+
+  return { modo, contas, desgaste, outrosFixos, fixos, horasCob, horasPrincipal, horasExtra, custoHora, imp, car, mar, divisor, divMin, unid,
+    matSub, mat, mo, outrosDir, custoDireto, precoLote, minLote, sugUn, minUn, custoUn, destino,
+    p, lucroLote, lucroUn, margemReal, status, c, mercado, retirada, ganhoHora, eq };
+}
+/*CALC_END*/
+
+/* ---------- Estado ---------- */
+const KEY = 'meuvalor-v1';
+const NEGOCIO_PADRAO = {
+  modo: 'principal', retirada: '', horasExtra: '', ganhoHora: '',
+  energia: '', aluguel: '', celular: '', internet: '', transporte: '', outrasContas: '',
+  valorEquip: '', vidaUtil: '', marketing: '', contab: '', software: '', outrosFixos: '',
+  hDia: '8', dSem: '5', sMes: '4', aprov: '70', imposto: '6', cartao: '0', margem: '30'
+};
+function produtoVazio() {
+  return { nome: '', categoria: 'Serviços', unidades: '1', perda: '2', horas: '', outrosDiretos: '', preco: '', concorrencia: '',
+    materiais: [{ n: '', q: '1', u: 'un', c: '' }, { n: '', q: '1', u: 'un', c: '' }, { n: '', q: '1', u: 'un', c: '' }] };
+}
+function exemplo() {
+  return Object.assign({}, NEGOCIO_PADRAO, {
+    retirada: '2000', energia: '90', celular: '60', internet: '100', marketing: '50', software: '30',
+    valorEquip: '1800', vidaUtil: '60', hDia: '6', dSem: '5', sMes: '4', aprov: '70',
+    imposto: '4', cartao: '3', margem: '25',
+    nome: 'Brownie tradicional', categoria: 'Comércio', unidades: '12', perda: '5', horas: '2', outrosDiretos: '18',
+    preco: '16', concorrencia: '15',
+    materiais: [
+      { n: 'Chocolate meio amargo', q: '0.6', u: 'kg', c: '48' },
+      { n: 'Manteiga', q: '0.25', u: 'kg', c: '52' },
+      { n: 'Açúcar', q: '0.4', u: 'kg', c: '6' },
+      { n: 'Ovos', q: '6', u: 'un', c: '0.9' },
+      { n: 'Farinha de trigo', q: '0.3', u: 'kg', c: '5.5' }
+    ],
+    exemplo: true
+  });
+}
+function carregar() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const o = JSON.parse(raw);
+      if (o && typeof o === 'object') {
+        const base = Object.assign({}, NEGOCIO_PADRAO, produtoVazio(), o);
+        if (!Array.isArray(base.materiais)) base.materiais = [];
+        return base;
+      }
+    }
+  } catch (e) {}
+  return exemplo();
+}
+let S = carregar();
+function salvar() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ---------- Formatação ---------- */
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmt = x => (isFinite(x) ? BRL.format(x) : '—');
+const pct = x => (x * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+const nf = x => x.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+/* ---------- Formulário ---------- */
+function campo(k, label, o) {
+  o = o || {};
+  const pre = o.pre ? '<span class="ad pre">' + o.pre + '</span>' : '';
+  const suf = o.suf ? '<span class="ad suf">' + o.suf + '</span>' : '';
+  const hint = o.hint ? '<span class="hint">' + o.hint + '</span>' : '';
+  return '<div class="field"><label for="f-' + k + '">' + label + '</label><div class="inp">' + pre +
+    '<input id="f-' + k + '" data-k="' + k + '" type="text" inputmode="decimal" autocomplete="off" placeholder="' + (o.ph || '0') + '">' + suf +
+    '</div>' + hint + '</div>';
+}
+const R = { pre: 'R$' };
+function grupo(titulo, sumKey, corpo, only) {
+  return '<details open' + (only ? ' data-only="' + only + '"' : '') + '><summary><span class="t"><i class="chev"></i>' + titulo +
+    '</span><span class="sum" data-out="' + sumKey + '"></span></summary><div class="body">' + corpo + '</div></details>';
+}
+const MODO_TXT = {
+  principal: 'Você vive disso. O preço inclui quanto você quer ganhar por mês com o seu trabalho.',
+  extra: 'É uma renda a mais. Você não precisa definir uma retirada mensal: só informe os custos para operar o extra e as horas que dedica a ele.'
+};
+
+function montarForm() {
+  const negocio =
+    '<section class="card"><div class="step-head"><span class="step-n">1</span><h2>Seu negócio</h2></div>' +
+    '<p class="leadp">Preencha uma vez. Esses valores ficam salvos e valem para todos os seus produtos.</p>' +
+    '<div class="seg" role="group" aria-label="Tipo de trabalho"><button type="button" data-modo="principal">Trabalho principal</button><button type="button" data-modo="extra">Extra ou esporádico</button></div>' +
+    '<p id="modo-hint"></p>' +
+    grupo('Quanto você quer ganhar', 'sumRetirada',
+      '<div class="grid">' + campo('retirada', 'Retirada desejada por mês', { pre: 'R$', hint: 'Seu salário. Se ficar em zero, seu trabalho sai de graça no preço.' }) + '</div>', 'principal') +
+    grupo('Contas fixas', 'sumContas',
+      '<div class="grid">' + campo('energia', 'Energia', R) + campo('aluguel', 'Aluguel', R) + campo('celular', 'Celular', R) +
+      campo('internet', 'Internet', R) + campo('transporte', 'Transporte', R) + campo('outrasContas', 'Outras contas fixas', R) + '</div>') +
+    grupo('Desgaste de equipamentos', 'sumDesgaste',
+      '<div class="grid">' + campo('valorEquip', 'Valor do equipamento', { pre: 'R$', hint: 'Quanto custou tudo o que você usa para trabalhar.' }) +
+      campo('vidaUtil', 'Vida útil', { suf: 'meses', hint: 'Em quanto tempo precisa trocar.' }) + '</div>') +
+    grupo('Outros custos fixos', 'sumOutros',
+      '<div class="grid">' + campo('marketing', 'Marketing', R) + campo('contab', 'Contabilidade', R) +
+      campo('software', 'Software e assinaturas', R) + campo('outrosFixos', 'Outros custos fixos', R) + '</div>' +
+      '<div class="stripi"><span>Total de custos fixos por mês <b data-out="totalFixos"></b></span></div>') +
+    grupo('Seu tempo', 'sumHoras',
+      '<div class="grid">' + campo('hDia', 'Horas de trabalho por dia', { suf: 'h' }) + campo('dSem', 'Dias de trabalho por semana', { suf: 'dias' }) +
+      campo('sMes', 'Semanas por mês', { suf: 'sem.' }) +
+      campo('aprov', 'Aproveitamento do tempo', { suf: '%', hint: 'Parte do expediente em que você de fato atende ou produz. O resto vai em orçamento, espera, limpeza.' }) + '</div>' +
+      '<div class="stripi"><span>Horas cobráveis por mês <b data-out="horasCob"></b></span><span>Custo da sua hora <b data-out="custoHora"></b></span></div>', 'principal') +
+    grupo('Seu tempo no extra', 'sumHorasExtra',
+      '<div class="grid">' + campo('horasExtra', 'Horas por mês dedicadas ao extra', { suf: 'h', ph: '20', hint: 'Some atendimento, preparo e deslocamento.' }) +
+      campo('ganhoHora', 'Quanto quer ganhar por hora', { pre: 'R$', hint: 'Opcional. Deixe em branco se o extra serve só para cobrir custos.' }) + '</div>' +
+      '<div class="stripi"><span>Custo da sua hora <b data-out="custoHora"></b></span></div>', 'extra') +
+    grupo('Percentuais sobre o preço de venda', 'sumPct',
+      '<div class="grid">' + campo('imposto', 'Impostos', { suf: '%', hint: 'MEI: coloque 0. Simples Nacional: a alíquota da sua faixa.' }) +
+      campo('cartao', 'Taxa de cartão', { suf: '%', hint: 'O que a maquininha desconta de cada venda.' }) +
+      campo('margem', 'Margem de lucro', { suf: '%', hint: 'Quanto do preço deve sobrar de lucro, depois de tudo.' }) + '</div>') +
+    '</section>';
+
+  const produto =
+    '<section class="card"><div class="step-head"><span class="step-n">2</span><h2>Seu produto ou serviço</h2></div>' +
+    '<p class="leadp">Um de cada vez. Use “Novo produto” no topo para começar outro sem perder os dados do negócio.</p>' +
+    '<div style="display:grid;gap:14px">' +
+    '<div class="grid">' +
+    '<div class="field"><label for="f-nome">Nome</label><div class="inp"><input id="f-nome" data-k="nome" type="text" autocomplete="off" placeholder="Ex.: Brownie, aula avulsa"></div></div>' +
+    '<div class="field"><label for="f-categoria">Categoria</label><div class="inp"><select id="f-categoria" data-k="categoria"><option>Comércio</option><option>Serviços</option><option>Indústria</option></select></div></div>' +
+    campo('unidades', 'Unidades por lote', { ph: '1', hint: 'Faz 12 brownies de uma vez? Coloque 12. Para um serviço, deixe 1.' }) +
+    '</div>' +
+    '<div><div class="lbl" style="margin-bottom:8px">Materiais e insumos</div><div class="mats" id="mats"></div>' +
+    '<button class="btn sec sm add" id="btn-add" type="button" style="margin-top:10px">+ Adicionar item</button></div>' +
+    '<div class="stripi"><span>Materiais (sem perda) <b data-out="matSub"></b></span></div>' +
+    '<div class="grid">' +
+    campo('perda', 'Perda estimada', { suf: '%', hint: 'Desperdício de material. De 2 a 5% é comum.' }) +
+    campo('horas', 'Horas trabalhadas no lote', { suf: 'h', hint: 'Tempo total para fazer o lote inteiro.' }) +
+    campo('outrosDiretos', 'Outros custos diretos', { pre: 'R$', hint: 'Embalagem, deslocamento, entrega: custos só deste lote.' }) +
+    '</div></div></section>';
+
+  const comparar =
+    '<section class="card"><div class="step-head"><span class="step-n">3</span><h2>Compare com a realidade</h2></div>' +
+    '<p class="leadp">Opcional. Veja se o preço que você já cobra (ou pensa em cobrar) fecha a conta e como está frente ao mercado.</p>' +
+    '<div class="grid">' +
+    campo('preco', 'Preço que você pretende cobrar', { pre: 'R$', hint: 'Por unidade.' }) +
+    campo('concorrencia', 'Preço da concorrência', { pre: 'R$', hint: 'Por unidade, de quem vende algo parecido.' }) +
+    '</div></section>';
+
+  const equilibrio = '<section class="card eq" id="equilibrio" aria-live="polite"></section>';
+
+  const f = document.getElementById('form');
+  f.innerHTML = negocio + produto + comparar + equilibrio;
+  f.dataset.modo = S.modo;
+  montarMateriais();
+  preencherValores();
+  marcarModo();
+}
+function marcarModo() {
+  document.querySelectorAll('[data-modo]').forEach(b => {
+    if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.dataset.modo === S.modo));
+  });
+  const h = document.getElementById('modo-hint'); if (h) h.textContent = MODO_TXT[S.modo];
+  document.getElementById('form').dataset.modo = S.modo;
+}
+
+const UNIDADES = ['kg', 'g', 'l', 'ml', 'un', 'm', 'cm', 'h', 'pacote', 'caixa'];
+function montarMateriais() {
+  const box = document.getElementById('mats');
+  if (!S.materiais.length) { box.innerHTML = '<p class="empty">Nenhum item. Para serviços sem material, pode deixar assim.</p>'; return; }
+  box.innerHTML = '<datalist id="un-list">' + UNIDADES.map(u => '<option value="' + u + '">').join('') + '</datalist>' +
+    S.materiais.map((m, i) =>
+      '<div class="mat"><div class="mat-top"><div class="inp"><input id="m' + i + '-n" data-m="' + i + '" data-f="n" type="text" autocomplete="off" placeholder="Item ' + (i + 1) + ' (ex.: chocolate, fio, tinta)" aria-label="Nome do item ' + (i + 1) + '"></div>' +
+      '<button class="icon" type="button" data-del="' + i + '" aria-label="Remover item ' + (i + 1) + '">×</button></div>' +
+      '<div class="mat-grid">' +
+      '<div class="field"><label for="m' + i + '-q">Quantidade</label><div class="inp"><input id="m' + i + '-q" data-m="' + i + '" data-f="q" type="text" inputmode="decimal" placeholder="1"></div></div>' +
+      '<div class="field"><label for="m' + i + '-u">Unidade</label><div class="inp"><input id="m' + i + '-u" data-m="' + i + '" data-f="u" type="text" list="un-list" placeholder="un"></div></div>' +
+      '<div class="field"><label for="m' + i + '-c">Custo por unidade</label><div class="inp"><span class="ad pre">R$</span><input id="m' + i + '-c" data-m="' + i + '" data-f="c" type="text" inputmode="decimal" placeholder="0"></div></div>' +
+      '<div class="field"><span class="lbl">Total</span><span class="mat-total" id="m' + i + '-t">R$ 0,00</span></div>' +
+      '</div></div>').join('');
+  S.materiais.forEach((m, i) => ['n', 'q', 'u', 'c'].forEach(f => { document.getElementById('m' + i + '-' + f).value = m[f] || ''; }));
+}
+function preencherValores() {
+  document.querySelectorAll('[data-k]').forEach(el => { const v = S[el.dataset.k]; el.value = v === undefined ? '' : v; });
+}
+
+/* ---------- Resultado ---------- */
+function out(name, text) { document.querySelectorAll('[data-out="' + name + '"]').forEach(el => { el.textContent = text; }); }
+
+function atualizar() {
+  const c = calcular(S);
+  out('sumRetirada', fmt(S.modo === 'principal' ? c.retirada : 0) + '/mês');
+  out('sumContas', fmt(c.contas));
+  out('sumDesgaste', fmt(c.desgaste) + '/mês');
+  out('sumOutros', fmt(c.outrosFixos));
+  out('totalFixos', fmt(c.fixos));
+  out('sumHoras', nf(c.horasPrincipal) + ' h/mês');
+  out('sumHorasExtra', nf(c.horasExtra) + ' h/mês');
+  out('horasCob', nf(c.horasPrincipal) + ' h');
+  out('custoHora', fmt(c.custoHora));
+  out('sumPct', pct(c.imp + c.car + c.mar));
+  out('matSub', fmt(c.matSub));
+  S.materiais.forEach((m, i) => { const el = document.getElementById('m' + i + '-t'); if (el) el.textContent = fmt(num(m.q) * num(m.c)); });
+  desenharResultado(c);
+  desenharEquilibrio(c);
+  document.getElementById('bar-v').textContent = c.divisor > 0 && c.unid > 0 ? fmt(c.sugUn) : '—';
+  document.getElementById('notice').hidden = !S.exemplo;
+  salvar();
+}
+
+function desenharResultado(c) {
+  const nome = (S.nome || '').trim() || 'Seu produto';
+  const avisos = [];
+  if (c.divisor <= 0) avisos.push(['bad', 'Impostos, taxa de cartão e margem somam 100% ou mais. Reduza algum deles para o cálculo funcionar.']);
+  if (c.modo === 'extra') {
+    if (c.horasExtra <= 0) avisos.push(['', 'Informe quantas horas por mês você dedica ao extra, em “Seu tempo no extra”, para calcular o custo da sua hora.']);
+  } else {
+    if (c.horasPrincipal <= 0) avisos.push(['', 'Preencha as horas, dias, semanas e o aproveitamento do tempo para calcular o custo da sua hora.']);
+    else if (c.retirada <= 0) avisos.push(['', 'Você não informou quanto quer ganhar por mês. Sem isso, o preço não paga o seu trabalho. Se é só um extra, troque para “Extra ou esporádico”.']);
+  }
+  if (c.unid <= 0) avisos.push(['bad', 'Informe pelo menos 1 unidade por lote.']);
+  if (c.custoDireto <= 0 && c.divisor > 0) avisos.push(['', 'Ainda não há custo no produto. Preencha materiais, horas trabalhadas ou outros custos.']);
+
+  const ok = c.divisor > 0 && c.unid > 0;
+  const loteTxt = c.unid > 1 ? 'Lote de ' + nf(c.unid) + ' unidades: ' + fmt(c.precoLote) : 'Preço de uma unidade (lote de 1)';
+
+  let h = '<div><p class="eb">' + esc(S.categoria) + ' · ' + esc(nome) + '</p>' +
+    '<p class="lbl" style="margin-top:8px">Seu preço ideal, por unidade</p>' +
+    '<p class="big">' + (ok ? fmt(c.sugUn) : '—') + '</p>' +
+    '<p class="sub">' + (ok ? 'Cobre custos, impostos e a sua margem de ' + pct(c.mar) + '. ' + loteTxt + '.' : 'Corrija os avisos abaixo para ver o preço.') + '</p></div>';
+
+  if (avisos.length) h += '<div class="alerts">' + avisos.map(a => '<div class="alert ' + a[0] + '">' + a[1] + '</div>').join('') + '</div>';
+
+  h += '<div class="pair"><div><div class="k">Preço mínimo, sem lucro</div><div class="v">' + (ok ? fmt(c.minUn) : '—') + '</div></div>' +
+    '<div><div class="k">Custo direto por unidade</div><div class="v">' + (c.unid > 0 ? fmt(c.custoUn) : '—') + '</div></div></div>';
+
+  if (ok && c.precoLote > 0) {
+    const segs = c.destino.filter(d => d[1] > 0.0000001);
+    h += '<div><h3>Para onde vai o dinheiro</h3>' +
+      '<div class="bar-split" role="img" aria-label="Divisão do preço sugerido">' +
+      segs.map(d => '<i style="width:' + (d[1] / c.precoLote * 100) + '%;background:var(--' + d[2] + ')"></i>').join('') + '</div>' +
+      '<ul class="legend">' + segs.map(d =>
+        '<li><span class="dot" style="background:var(--' + d[2] + ')"></span><span>' + d[0] + '</span><span class="p">' + pct(d[1] / c.precoLote) + '</span><span class="r">' + fmt(d[1] / c.unid) + '</span></li>').join('') +
+      '</ul></div>';
+  }
+
+  if (c.p !== null && ok) {
+    const rot = { ok: 'Fecha a conta', warn: 'Abaixo da sua margem', bad: 'Abaixo do mínimo' }[c.status];
+    const txt = {
+      ok: 'Cobre os custos e entrega a margem que você definiu.',
+      warn: 'Cobre os custos, mas fica abaixo da margem que você definiu.',
+      bad: 'Não cobre seus custos nem o seu tempo.'
+    }[c.status];
+    h += '<div class="diag"><h3>Se você cobrar ' + fmt(c.p) + ' por unidade</h3>' +
+      '<p><span class="pill ' + c.status + '">' + rot + '</span></p><p>' + txt + '</p>' +
+      '<div class="kv"><span>Lucro real por unidade</span><b>' + fmt(c.lucroUn) + '</b></div>' +
+      (c.unid > 1 ? '<div class="kv"><span>Lucro real por lote</span><b>' + fmt(c.lucroLote) + '</b></div>' : '') +
+      '<div class="kv"><span>Margem real</span><b>' + pct(c.margemReal) + '</b></div>';
+    if (c.mercado) {
+      const m = c.mercado;
+      const t = m.dir === 'igual' ? 'Seu preço é igual ao do mercado.' : 'Seu preço está ' + (m.pct * 100).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '% ' + m.dir + ' do mercado.';
+      h += '<div class="kv"><span>Mercado</span><b style="text-align:right">' + t + '</b></div>';
+    }
+    h += '</div>';
+  } else if (ok) {
+    h += '<div class="diag"><h3>Seu preço atual</h3><p class="hint">Preencha “Preço que você pretende cobrar” no passo 3 para ver o lucro real e como você fica frente ao mercado.</p></div>';
+  }
+  document.getElementById('resultado').innerHTML = h;
+}
+
+function desenharEquilibrio(c) {
+  const e = c.eq;
+  const vtxt = n => nf(n) + (n === 1 ? ' venda' : ' vendas');
+  let h = '<div class="step-head"><span class="step-n roxo">4</span><h2>Quantas vendas para pagar o custo fixo</h2></div>' +
+    '<p class="leadp">Quantas vendas por mês você precisa fazer para cobrir seus custos fixos. Usa o preço do passo 3 ou, se estiver vazio, o preço sugerido.</p>';
+  if (c.divisor <= 0 || c.unid <= 0) {
+    h += '<div class="alert">Corrija os avisos do resultado para calcular.</div>';
+  } else if (c.fixos <= 0 && e.metaExtra <= 0) {
+    h += '<div class="alert">Você ainda não informou custos fixos, então não há o que cobrir. Preencha o passo 1.</div>';
+  } else if (e.sobra <= 0) {
+    h += '<div class="alert bad">Com o preço de ' + fmt(e.precoBE) + ', cada venda não cobre nem os impostos e os custos do produto. Aumente o preço ou reduza custos.</div>';
+  } else {
+    if (c.fixos > 0) {
+      h += '<p class="big">' + vtxt(e.vendasFixos) + '</p><p class="sub">por mês para cobrir ' + fmt(c.fixos) + ' de custos fixos, cerca de ' + nf(Math.ceil(e.vendasFixos / 4)) + ' por semana.</p>';
+    }
+    h += '<div class="stats">' +
+      '<div><div class="k">Preço por venda</div><div class="v">' + fmt(e.precoBE) + '</div><div class="h">' + (e.usaSugerido ? 'Preço sugerido' : 'Preço que você pretende cobrar') + '</div></div>' +
+      '<div><div class="k">Sobra por venda</div><div class="v">' + fmt(e.sobra) + '</div><div class="h">Preço menos impostos, taxas e custos do produto</div></div>' +
+      '<div><div class="k">Custos fixos do mês</div><div class="v">' + fmt(c.fixos) + '</div><div class="h">Total do passo 1</div></div></div>';
+    if (e.vendasMeta !== null) {
+      const alvo = c.modo === 'principal' ? 'sua retirada de ' + fmt(e.metaExtra) : fmt(e.metaExtra) + ' pelas suas horas';
+      h += '<p class="extra">Para cobrir também ' + alvo + ': <b>' + vtxt(e.vendasMeta) + ' por mês</b>.</p>';
+    }
+    h += '<p class="formula">Cada venda é uma unidade. Conta: custos fixos ÷ sobra por venda, arredondado para cima.</p>';
+  }
+  document.getElementById('equilibrio').innerHTML = h;
+}
+
+/* ---------- Eventos ---------- */
+const form = document.getElementById('form');
+form.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.k) { S[t.dataset.k] = t.value; }
+  else if (t.dataset.m !== undefined) { S.materiais[+t.dataset.m][t.dataset.f] = t.value; }
+  else return;
+  atualizar();
+});
+form.addEventListener('click', e => {
+  const md = e.target.closest('button[data-modo]');
+  if (md) { S.modo = md.dataset.modo; marcarModo(); atualizar(); return; }
+  const del = e.target.closest('[data-del]');
+  if (del) { S.materiais.splice(+del.dataset.del, 1); montarMateriais(); atualizar(); return; }
+  if (e.target.closest('#btn-add')) {
+    S.materiais.push({ n: '', q: '1', u: 'un', c: '' });
+    montarMateriais(); atualizar();
+    const el = document.getElementById('m' + (S.materiais.length - 1) + '-n'); if (el) el.focus();
+  }
+});
+
+document.getElementById('btn-novo').addEventListener('click', () => {
+  const ex = S.exemplo;
+  Object.assign(S, produtoVazio());
+  S.exemplo = ex;
+  montarForm(); atualizar();
+  const el = document.getElementById('f-nome'); if (el) el.focus();
+});
+
+let confirmando = false, timer = null;
+function comecarDoZero() {
+  S = Object.assign({}, NEGOCIO_PADRAO, produtoVazio());
+  S.exemplo = false;
+  montarForm(); atualizar();
+  document.getElementById('calculadora').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+document.getElementById('btn-zero').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if (S.exemplo || confirmando) { clearTimeout(timer); confirmando = false; b.textContent = 'Começar do zero'; b.classList.remove('danger'); comecarDoZero(); return; }
+  confirmando = true; b.textContent = 'Toque de novo para apagar tudo'; b.classList.add('danger');
+  timer = setTimeout(() => { confirmando = false; b.textContent = 'Começar do zero'; b.classList.remove('danger'); }, 4000);
+});
+document.getElementById('btn-zero2').addEventListener('click', comecarDoZero);
+document.getElementById('bar-go').addEventListener('click', () => {
+  document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-go]');
+  if (!a) return;
+  const el = document.getElementById(a.dataset.go);
+  if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+});
+
+montarForm();
+atualizar();
+
+// A barra de preço do celular só aparece enquanto a calculadora está na tela
+try {
+  const bar = document.getElementById('bar');
+  new IntersectionObserver(es => { bar.hidden = !es[0].isIntersecting; }, { threshold: 0.05 }).observe(document.getElementById('calculadora'));
+} catch (e) {}
+</script>
+
+</body>
+</html>
