@@ -511,7 +511,7 @@ function calcular(s) {
   const litros = n('consumo') > 0 ? km / n('consumo') : 0;
   const combustivel = litros * n('litro');
   const desgasteVeic = km * n('desgasteKm');
-  const pedagio = bl.deslocamento ? n('pedagio') : 0;
+  const pedagio = bl.deslocamento ? n('pedagio') * (s.idaVolta ? 2 : 1) : 0;
   const deslocamento = bl.deslocamento ? combustivel + desgasteVeic + pedagio : 0;
 
   // Embalagem, frete e outros
@@ -580,9 +580,11 @@ function custoCarro(s) {
   const n = k => num(s[k]);
   const meses = n('carroAnos') * 12;
   const deprec = meses > 0 ? n('carroValor') / meses : 0;
-  const mensal = deprec + n('carroFixo') + n('carroManut');
+  const impostos = (n('carroIpva') + n('carroLic')) / 12;                       // IPVA e licenciamento são anuais
+  const seguro = s.carroSeguroPer === 'mes' ? n('carroSeguro') : n('carroSeguro') / 12;
+  const mensal = deprec + impostos + seguro + n('carroParcela') + n('carroManut');
   const km = n('carroKm');
-  return { deprec, mensal, km, porKm: km > 0 ? mensal / km : 0 };
+  return { deprec, impostos, seguro, mensal, km, porKm: km > 0 ? mensal / km : 0, duplo: n('carroValor') > 0 && n('carroParcela') > 0 };
 }
 /*CALC_END*/
 
@@ -593,7 +595,7 @@ const NEGOCIO_PADRAO = {
   energia: '', aluguel: '', celular: '', internet: '', transporte: '', outrasContas: '', equipe: '',
   valorEquip: '', vidaUtil: '', marketing: '', contab: '', software: '', outrosFixos: '',
   hDia: '8', dSem: '5', sMes: '4', aprov: '70', imposto: '6', cartao: '0', margem: '30',
-  carroValor: '', carroAnos: '', carroFixo: '', carroManut: '', carroKm: ''
+  carroValor: '', carroAnos: '', carroIpva: '', carroLic: '', carroSeguro: '', carroSeguroPer: 'ano', carroParcela: '', carroManut: '', carroKm: ''
 };
 function novoItem() { return { n: '', q: '1', u: 'un', c: '', p: '' }; }
 function produtoVazio() {
@@ -633,7 +635,7 @@ function carregar() {
       }
     }
   } catch (e) {}
-  return exemplo();
+  return Object.assign({}, NEGOCIO_PADRAO, produtoVazio());
 }
 let S = carregar();
 function salvar() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -659,7 +661,7 @@ function campo(k, label, o) {
 }
 const R = { pre: 'R$' };
 function grupo(titulo, sumKey, corpo, only) {
-  return '<details open' + (only ? ' data-only="' + only + '"' : '') + '><summary><span class="t"><i class="chev"></i>' + titulo +
+  return '<details' + (only ? ' data-only="' + only + '"' : '') + '><summary><span class="t"><i class="chev"></i>' + titulo +
     '</span><span class="sum" data-out="' + sumKey + '"></span></summary><div class="body">' + corpo + '</div></details>';
 }
 const MODO_TXT = {
@@ -766,20 +768,25 @@ function blocoHTML(k) {
       campo('consumo', 'Consumo médio do carro', { suf: 'km/l', hint: 'Quantos km o carro faz com 1 litro.' }) +
       campo('litro', 'Preço do litro', { pre: 'R$', hint: 'Do combustível que você usa.' }) +
       campo('desgasteKm', 'Desgaste do carro por km', { pre: 'R$', hint: 'Pneus, óleo, manutenção e depreciação. Não sabe? Use o cálculo logo abaixo.' }) +
-      campo('pedagio', 'Pedágio e estacionamento', { pre: 'R$', hint: 'Opcional.' }) + '</div>' +
+      campo('pedagio', 'Pedágio e estacionamento', { pre: 'R$', hint: 'Valor de um trecho. Com “Ida e volta”, contamos em dobro.' }) + '</div>' +
       '<details class="assist"><summary><span class="t"><i class="chev"></i>Não sabe o desgaste por km? Calcule aqui</span></summary><div class="body">' +
       '<p class="hint">Responda com valores aproximados. Usamos os km de todos os trabalhos com o carro, para dividir o custo dele de forma justa.</p>' +
       '<div class="grid">' +
-      campo('carroValor', 'Valor do carro hoje', { pre: 'R$', hint: 'Quanto ele vale, não quanto pagou. Se ainda está financiando, deixe em branco e some a parcela ao lado.' }) +
+      campo('carroValor', 'Valor do carro hoje', { pre: 'R$', hint: 'Quanto ele vale, não quanto pagou. Se ainda está financiando, deixe em branco e preencha a parcela.' }) +
       campo('carroAnos', 'Por quantos anos ainda vai usar', { suf: 'anos', hint: 'Antes de trocar de carro.' }) +
-      campo('carroFixo', 'Seguro, IPVA e parcela, por mês', { pre: 'R$', hint: 'Some tudo. IPVA e licenciamento: divida por 12.' }) +
-      campo('carroManut', 'Manutenção, pneus e óleo, por mês', { pre: 'R$', hint: 'Uma média do que você gasta.' }) +
+      campo('carroIpva', 'IPVA', { pre: 'R$', hint: 'Valor que você paga por ano.' }) +
+      campo('carroLic', 'Licenciamento', { pre: 'R$', hint: 'Valor que você paga por ano.' }) +
+      campo('carroSeguro', 'Seguro do carro', { pre: 'R$', hint: 'O valor que você paga, no período ao lado.' }) +
+      '<div class="field"><label for="f-carroSeguroPer">O seguro é pago</label><div class="inp"><select id="f-carroSeguroPer" data-k="carroSeguroPer"><option value="ano">por ano</option><option value="mes">por mês</option></select></div><span class="hint">Se paga parcelado, escolha “por mês” e use a parcela.</span></div>' +
+      campo('carroParcela', 'Parcela do financiamento', { pre: 'R$', hint: 'Por mês, se o carro for financiado. Senão, deixe em branco.' }) +
+      campo('carroManut', 'Manutenção, pneus e óleo', { pre: 'R$', hint: 'Média por mês do que você gasta.' }) +
       campo('carroKm', 'Km rodados por mês', { suf: 'km', hint: 'Total com o carro, incluindo outros trabalhos como o Uber.' }) + '</div>' +
+      '<p class="alert" id="carro-alert" hidden>Você preencheu o valor do carro e a parcela do financiamento: isso conta o carro duas vezes. Use só um dos dois.</p>' +
       '<div class="stripi"><span>Custo do carro por mês <b data-out="carroMensal"></b></span><span>Custo por km <b data-out="carroPorKm"></b></span></div>' +
       '<button class="btn sm" type="button" data-use-km>Usar este valor no desgaste por km</button>' +
       '</div></details>' +
-      '<label class="chk" for="f-idaVolta"><input type="checkbox" id="f-idaVolta" data-ck="idaVolta"><span>Ida e volta <span class="hint">(conta a distância duas vezes)</span></span></label>' +
-      '<div class="stripi"><span>Combustível <b data-out="dFuel"></b></span><span>Desgaste <b data-out="dWear"></b></span><span>Litros gastos <b data-out="dLit"></b></span></div>';
+      '<label class="chk" for="f-idaVolta"><input type="checkbox" id="f-idaVolta" data-ck="idaVolta"><span>Ida e volta <span class="hint">(conta a distância e o pedágio duas vezes)</span></span></label>' +
+      '<div class="stripi"><span>Distância considerada <b data-out="dKm"></b></span><span>Litros <b data-out="dLit"></b></span><span>Combustível <b data-out="dFuel"></b></span><span>Desgaste <b data-out="dWear"></b></span><span>Pedágio <b data-out="dPed"></b></span></div>';
   } else if (k === 'embalagem') {
     corpo = '<div class="grid one">' + campo('embalagem', 'Embalagem do lote', { pre: 'R$', hint: 'Caixa, sacola, etiqueta, fita.' }) + '</div>';
   } else if (k === 'frete') {
@@ -882,6 +889,9 @@ function atualizar() {
   out('dFuel', fmt(c.combustivel));
   out('dWear', fmt(c.desgasteVeic));
   out('dLit', nf(c.litros) + ' l');
+  out('dKm', nf(c.km) + ' km' + (S.idaVolta && num(S.dist) > 0 ? ' (' + nf(num(S.dist)) + ' × 2)' : ''));
+  out('dPed', fmt(c.pedagio) + (S.idaVolta && num(S.pedagio) > 0 ? ' (' + fmt(num(S.pedagio)) + ' × 2)' : ''));
+  const al = document.getElementById('carro-alert'); if (al) al.hidden = !custoCarro(S).duplo;
   const cc = custoCarro(S);
   out('carroMensal', fmt(cc.mensal));
   out('carroPorKm', cc.km > 0 ? fmt(cc.porKm) : '—');
